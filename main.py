@@ -28,13 +28,14 @@ class StartScreen(Screen):
         yield Center(
             Vertical(
                 Static("🕵️ Welcome to Enigma Secure Chat!", classes="banner"),
-                Static("Enter details or press Start to use .env defaults."),
+                Static("\n"+"Enter details or press Start to use .env defaults."),
                 Input(placeholder=f"Username (default: {DEFAULT_USERNAME or 'none'})", id="username"),
                 Input(placeholder="Encryption key (leave blank to use .env)", password=True, id="key"),
                 Input(placeholder=f"Server host (default: {DEFAULT_SERVER_HOST})", id="host"),
                 Input(placeholder=f"Server port (default: {DEFAULT_SERVER_PORT})", id="port"),
                 Button("Start Chatting", id="start_button", variant="success"),
                 Button("Save as default (.env)", id="save_button", variant="primary"),
+                Button("Quit", id="quit_button", variant="primary"),
                 classes="start-box",
             )
         )
@@ -69,6 +70,11 @@ class StartScreen(Screen):
                 "port": p,
             }
             self.app.push_screen("chat")
+        
+        if event.button.id == "quit_button":
+            self.app.exit()
+            
+            
 class ChatScreen(Screen):
     messages = reactive(list)
 
