@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import os
 import logging
@@ -9,7 +10,8 @@ from textual.widgets import Input, Static, Button
 from textual.scroll_view import ScrollView
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.containers import Vertical, Center
+from textual.containers import Vertical, Center, Horizontal
+from datetime import datetime
 
 logging.getLogger("textual").setLevel(logging.CRITICAL)
 
@@ -20,24 +22,31 @@ DEFAULT_SERVER_HOST = os.getenv("SERVER_HOST", "") or "127.0.0.1"
 DEFAULT_SERVER_PORT = int(os.getenv("SERVER_PORT") or 8000)
 DEFAULT_DECRYPTION_KEY = os.getenv("DECRYPTION_KEY", "") or ""
 
-if not DEFAULT_DECRYPTION_KEY:
-    raise ValueError("DECRYPTION_KEY not found in environment variables.")
-
 class StartScreen(Screen):
+    CSS_PATH = "appcss.css"
     def compose(self):
         yield Center(
             Vertical(
                 Static("🕵️ Welcome to Enigma Secure Chat!", classes="banner"),
                 Static("\n"+"Enter details or press Start to use .env defaults."),
                 Input(placeholder=f"Username (default: {DEFAULT_USERNAME or 'none'})", id="username"),
-                Input(placeholder="Encryption key (leave blank to use .env)", password=True, id="key"),
+                Input(placeholder="Encryption key (leave blank to use .env)", id="key"),
                 Input(placeholder=f"Server host (default: {DEFAULT_SERVER_HOST})", id="host"),
                 Input(placeholder=f"Server port (default: {DEFAULT_SERVER_PORT})", id="port"),
-                Button("Start Chatting", id="start_button", variant="success"),
-                Button("Save as default (.env)", id="save_button", variant="primary"),
-                Button("Quit", id="quit_button", variant="primary"),
-                classes="start-box",
-            )
+                Center(
+                Horizontal(
+                    Button("Start Chatting", id="start_button", variant="success"),
+                    Button("Generate Key", id="generate_key_button", variant="primary"),
+                    Button("Save as default (.env)", id="save_button", variant="primary"),
+                    Button("Quit", id="quit_button", variant="primary"),
+                    classes="button-row",
+                ),
+                ),
+            classes="start-box",
+            ),
+            id="dialog"
+            
+            
         )
 
     def _collect_values(self):
@@ -60,7 +69,11 @@ class StartScreen(Screen):
             set_key(ENV_PATH, "SERVER_PORT", str(p))
             self.notify("Saved to .env", severity="information", timeout=2.0)
             return
-
+        if event.button.id == "generate_key_button":
+            newkey = Fernet.generate_key().decode()
+            self.query_one("#key", Input).value = newkey
+            self.notify("New key generated! Save it to .env to keep it.", severity="information", timeout=3.0)
+            return
         if event.button.id == "start_button":
             u, k, h, p = self._collect_values()
             self.app.user_config = {
@@ -69,6 +82,17 @@ class StartScreen(Screen):
                 "host": h,
                 "port": p,
             }
+            try:
+                Fernet(k.encode())
+            except Exception:
+                self.notify("Invalid encryption key! Check format and length.", severity="error", timeout=3.0)
+                return
+            if not (1 <= p <= 65535):
+                self.notify("Invalid port number! Must be between 1 and 65535.", severity="error", timeout=3.0)
+                return
+            if not h or h.isspace() or len(h) > 255:
+                self.notify("Invalid server host! Cannot be empty or too long.", severity="error", timeout=3.0)
+                return
             self.app.push_screen("chat")
         
         if event.button.id == "quit_button":
@@ -76,6 +100,7 @@ class StartScreen(Screen):
             
             
 class ChatScreen(Screen):
+    CSS_PATH = "appcss.css"
     messages = reactive(list)
 
     def __init__(self):
@@ -113,9 +138,11 @@ class ChatScreen(Screen):
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
             self.messages.append("[Connected to server]")
-            self.writer.write(f"{self.username} has joined the chat.\n".encode())
+            join_message = {"system": True, "text": f"{self.username} has joined the chat"}
+            self.writer.write((json.dumps(join_message) + "\n").encode())
             await self.writer.drain()
-            asyncio.create_task(self.read_loop())
+
+            self.readingloop = asyncio.create_task(self.read_loop())
         except Exception:
             self.messages.append("[Offline mode - no server connection]")
         await self.refresh_messages()
@@ -130,12 +157,15 @@ class ChatScreen(Screen):
                 if not line:
                     continue
                 message = json.loads(line.decode())
-                payload = message.get("payload", "")
-                try:
-                    plain_text = self.fernet.decrypt(payload.encode()).decode()
-                except Exception:
-                    plain_text = "[Decryption failed]"
-                self.messages.append(f"{message.get('username','Unknown')}: {plain_text}")
+                if message.get("system"):
+                    self.messages.append(f"[{self.timestamp()}] [System] {message.get('text','')}")
+                else:
+                    payload = message.get("payload", "")
+                    try:
+                        plain_text = self.fernet.decrypt(payload.encode()).decode()
+                    except Exception:
+                        plain_text = "[Decryption failed]"
+                    self.messages.append(f"[{self.timestamp()}] {message.get('username','Unknown')}: {plain_text}")
                 await self.refresh_messages()
             except Exception as e:
                 self.messages.append(f"[Error receiving message: {e}]")
@@ -164,12 +194,22 @@ class ChatScreen(Screen):
         self.input_box.value = ""
 
     async def on_unmount(self) -> None:
+        if self.readingloop:
+            self.readingloop.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self.readingloop
         if self.writer:
             try:
                 self.writer.close()
                 await self.writer.wait_closed()
             except Exception:
                 pass
+
+    
+    def timestamp(self):
+        return datetime.now().strftime("%H:%M:%S")
+
+
 
 class Client(App):
     def __init__(self):
@@ -186,4 +226,7 @@ class Client(App):
 
 
 if __name__ == "__main__":
-    Client().run()
+    try:
+        Client().run()
+    finally:
+        os.system("stty sane")

@@ -1,0 +1,12 @@
+#dialog {
+    height: 100%;
+    padding: 1 2;
+}
+
+Horizontal.button-row {
+    width: 100%;
+    align-horizontal: center;
+    margin-top: 1;
+    padding: 1 2;
+
+}
