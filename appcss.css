@@ -10,3 +10,18 @@ Horizontal.button-row {
     padding: 1 2;
 
 }
+
+.banner {
+    dock: top;
+    align: center middle;
+    color: white;
+    background: blue;
+    height: 3;
+
+}
+.header {
+    color: blue;
+    background: black;
+    height: 2;
+
+}

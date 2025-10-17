@@ -111,11 +111,14 @@ class ChatScreen(Screen):
         self.fernet = None
         self.host = None
         self.port = None
+        self.readingloop = None
 
     def compose(self):
-        self.message_display = Static("Enigma")
+        header = Static("Secure Chat Enigma 4000", classes="header")    
+        self.message_display = Static("")
         self.scroll = ScrollView(self.message_display)
         self.input_box = Input(placeholder="Type your message and press Enter...")
+        yield Center(header)
         yield self.scroll
         yield self.input_box
 
@@ -138,8 +141,8 @@ class ChatScreen(Screen):
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
             self.messages.append("[Connected to server]")
-            join_message = {"system": True, "text": f"{self.username} has joined the chat"}
-            self.writer.write((json.dumps(join_message) + "\n").encode())
+            handshake = {"username": self.username}
+            self.writer.write((json.dumps(handshake) + "\n").encode())
             await self.writer.drain()
 
             self.readingloop = asyncio.create_task(self.read_loop())
@@ -150,26 +153,36 @@ class ChatScreen(Screen):
     async def read_loop(self):
         while True:
             try:
-                if not self.reader:
-                    await asyncio.sleep(0.25)
-                    continue
                 line = await self.reader.readline()
                 if not line:
                     continue
                 message = json.loads(line.decode())
+
                 if message.get("system"):
-                    self.messages.append(f"[{self.timestamp()}] [System] {message.get('text','')}")
+                    if "text" in message:
+                        self.messages.append(f"[System] {message['text']}")
+                    elif "already in use" in message.get("text", ""):
+                        self.messages.append(f"[System] Username already in use. Disconnecting.")
+                        await self.refresh_messages()
+                        if self.writer:
+                            self.writer.close()
+                            await self.writer.wait_closed()
+                        return
+                    elif "users" in message:
+                        self.messages.append(f"[System] Online: {', '.join(message['users'])}")
                 else:
                     payload = message.get("payload", "")
                     try:
                         plain_text = self.fernet.decrypt(payload.encode()).decode()
                     except Exception:
-                        plain_text = "[Decryption failed]"
-                    self.messages.append(f"[{self.timestamp()}] {message.get('username','Unknown')}: {plain_text}")
+                        plain_text = "Decryption failed"
+                    self.messages.append(f"{self.timestamp()} {message.get('username','Unknown')}: {plain_text}")
+
                 await self.refresh_messages()
             except Exception as e:
                 self.messages.append(f"[Error receiving message: {e}]")
                 await self.refresh_messages()
+
 
     async def refresh_messages(self):
         content = "\n".join(self.messages[-20:])
@@ -186,7 +199,7 @@ class ChatScreen(Screen):
             await self.writer.drain()
         else:
             self.messages.append("[Offline mode - no server connection]")
-        self.messages.append(f"You: {message}")
+        self.messages.append(f"{self.timestamp()} You: {message}")
         await self.refresh_messages()
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -229,4 +242,5 @@ if __name__ == "__main__":
     try:
         Client().run()
     finally:
-        os.system("stty sane")
+        if os.name != "nt":
+            os.system("stty sane")
