@@ -12,6 +12,8 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.containers import Vertical, Center, Horizontal
 from datetime import datetime
+from rich.text import Text
+
 
 logging.getLogger("textual").setLevel(logging.CRITICAL)
 
@@ -27,7 +29,7 @@ class StartScreen(Screen):
     def compose(self):
         yield Center(
             Vertical(
-                Static("🕵️ Welcome to Enigma Secure Chat!", classes="banner"),
+                Static("Welcome to Enigma Secure Chat!", classes="banner"),
                 Static("\n"+"Enter details or press Start to use .env defaults."),
                 Input(placeholder=f"Username (default: {DEFAULT_USERNAME or 'none'})", id="username"),
                 Input(placeholder="Encryption key (leave blank to use .env)", id="key"),
@@ -87,6 +89,10 @@ class StartScreen(Screen):
             except Exception:
                 self.notify("Invalid encryption key! Check format and length.", severity="error", timeout=3.0)
                 return
+            
+            if not u or not u.strip():
+                self.notify("Invalid Username, it cant be empty!", severity="error", timeout=3.0)
+                return
             if not (1 <= p <= 65535):
                 self.notify("Invalid port number! Must be between 1 and 65535.", severity="error", timeout=3.0)
                 return
@@ -145,6 +151,13 @@ class ChatScreen(Screen):
         self.input_box.focus()
         asyncio.create_task(self.tryconnect())
         
+    def add_system_message(self, text: str, style: str = "info"):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.messages.append((timestamp, "system", text, style))
+
+    def add_user_message(self, username: str, text: str, is_self: bool = False):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.messages.append((timestamp, username, text, "self" if is_self else "other"))
         
     async def tryconnect(self):
         try:
@@ -204,7 +217,8 @@ class ChatScreen(Screen):
                         plain_text = self.fernet.decrypt(payload.encode()).decode()
                     except Exception:
                         plain_text = "Decryption failed"
-                    self.messages.append(f"{self.timestamp()} {message.get('username','Unknown')}: {plain_text}")
+                    timestamp = self.timestamp()
+                    self.messages.append((timestamp, message.get('username','Unknown'), plain_text, "other"))
 
                 await self.refresh_messages()
             except Exception as e:
@@ -213,29 +227,60 @@ class ChatScreen(Screen):
 
 
     async def refresh_messages(self):
-        content = "\n".join(self.messages[-20:])
+        lines = []
+        for message in self.messages[-50:]:
+            if isinstance(message, tuple) and len(message) == 4:
+                timestamp, sender, text, style = message
+            else:
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                sender = "system"
+                text = str(message)
+                style = "info"
+            
+            line = Text()
+            line.append(f"[{timestamp}] ", style="bold green")
+
+            if sender == "system":
+                if style == "error":
+                    line.append("[ERROR] ", style="bold red")
+                elif style == "success":
+                    line.append("[OK] ", style="bold green")
+            else:
+                if style == "self":
+                    line.append(f"You: ", style="bold magenta")
+                else:
+                    line.append(f"{sender}: ", style="bold cyan")
+
+
+            line.append(text)
+            lines.append(line)
+
+        content = Text("\n").join(lines)
         self.message_display.update(content)
         self.scroll.scroll_end(animate=False)
 
     async def handle_input(self, message: str):
         if not message.strip():
             return
+        
+        if not self.writer:
+            self.add_system_message("❌ Not connected to server", "error")  # ← NEW FORMAT
+            await self.refresh_messages()
+            return
+        
         encrypted_message = self.fernet.encrypt(message.encode()).decode()
         data = {"username": self.username, "payload": encrypted_message}
-        if self.writer:
-            try:
-                self.writer.write((json.dumps(data) + "\n").encode())
-                await self.writer.drain()
-            except:
-                self.messages.append("[System] Connection Lost")
-                self.writer = None
-
         
-        
-        else:
-            self.messages.append("[Offline mode - no server connection]")
-        self.messages.append(f"{self.timestamp()} You: {message}")
-        await self.refresh_messages()
+        try:
+            self.writer.write((json.dumps(data) + "\n").encode())
+            await self.writer.drain()
+            self.add_user_message("You", message, is_self=True)  # ← NEW FORMAT
+            await self.refresh_messages()
+        except Exception as e:
+            self.add_system_message(f"❌ Failed to send: {e}", "error")  # ← NEW FORMAT
+            self.writer = None
+            self.connected = False
+            await self.refresh_messages()
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         await self.handle_input(event.value)
