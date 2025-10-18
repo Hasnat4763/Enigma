@@ -93,8 +93,13 @@ class StartScreen(Screen):
             if not h or h.isspace() or len(h) > 255:
                 self.notify("Invalid server host! Cannot be empty or too long.", severity="error", timeout=3.0)
                 return
-            self.app.push_screen("chat")
-        
+
+            current_counter = getattr(self.app, "chat_counter", 0)
+            chat_name = f"chat_{current_counter}"
+            setattr(self.app, "chat_counter", current_counter + 1)
+            self.app.install_screen(ChatScreen(), name=chat_name)
+            self.app.push_screen(chat_name)
+            
         if event.button.id == "quit_button":
             self.app.exit()
             
@@ -133,21 +138,41 @@ class ChatScreen(Screen):
             }
 
         self.username = cfg["username"]
-        self.fernet = Fernet(cfg["key"])
+        self.fernet = Fernet(cfg["key"].encode())
         self.host = cfg["host"]
         self.port = cfg["port"]
 
         self.input_box.focus()
+        asyncio.create_task(self.tryconnect())
+        
+        
+    async def tryconnect(self):
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
-            self.messages.append("[Connected to server]")
             handshake = {"username": self.username}
             self.writer.write((json.dumps(handshake) + "\n").encode())
             await self.writer.drain()
-
+            line = await self.reader.readline()
+            if not line:
+                raise ConnectionError("No response from server during handshake")
+            message = json.loads(line.decode())
+            if message.get("system") and "already in use" in message.get("text", "").lower():
+                self.messages.append(f"[System] {message['text']}")
+                await self.refresh_messages()
+                self.writer.close()
+                await self.writer.wait_closed()
+                self.app.push_screen("start")
+                self.app.notify(f"{message['text']}", severity="error", timeout=2.0)
+                return
+            
+            self.messages.append("[Handshake successful]")
             self.readingloop = asyncio.create_task(self.read_loop())
-        except Exception:
-            self.messages.append("[Offline mode - no server connection]")
+        except Exception as e:
+            self.messages.append(f"[Offline mode - no server connection]: {e}")
+            await self.refresh_messages()
+            self.app.push_screen("start")
+            self.app.notify(f"Failed to connect to server {self.host}:{self.port} because of {e}", severity="error", timeout=3.0)
+            return
         await self.refresh_messages()
 
     async def read_loop(self):
@@ -155,21 +180,24 @@ class ChatScreen(Screen):
             try:
                 line = await self.reader.readline()
                 if not line:
-                    continue
+                    self.messages.append("[Disconnected from server]")
+                    await self.refresh_messages()
+                    if self.writer:
+                        self.writer.close()
+                        self.readingloop = None
+                        await self.writer.wait_closed()
+                    self.app.push_screen("start")
+                    self.app.notify("Disconnected from server", severity="error", timeout=3.0)
+                    return
                 message = json.loads(line.decode())
 
                 if message.get("system"):
-                    if "text" in message:
-                        self.messages.append(f"[System] {message['text']}")
-                    elif "already in use" in message.get("text", ""):
-                        self.messages.append(f"[System] Username already in use. Disconnecting.")
-                        await self.refresh_messages()
-                        if self.writer:
-                            self.writer.close()
-                            await self.writer.wait_closed()
-                        return
-                    elif "users" in message:
+                    text = message.get("text", "")
+                    if "users" in message:
                         self.messages.append(f"[System] Online: {', '.join(message['users'])}")
+                    else:
+                        self.messages.append(f"[System] {text}")
+                
                 else:
                     payload = message.get("payload", "")
                     try:
@@ -195,8 +223,15 @@ class ChatScreen(Screen):
         encrypted_message = self.fernet.encrypt(message.encode()).decode()
         data = {"username": self.username, "payload": encrypted_message}
         if self.writer:
-            self.writer.write((json.dumps(data) + "\n").encode())
-            await self.writer.drain()
+            try:
+                self.writer.write((json.dumps(data) + "\n").encode())
+                await self.writer.drain()
+            except:
+                self.messages.append("[System] Connection Lost")
+                self.writer = None
+
+        
+        
         else:
             self.messages.append("[Offline mode - no server connection]")
         self.messages.append(f"{self.timestamp()} You: {message}")
@@ -228,14 +263,15 @@ class Client(App):
     def __init__(self):
         super().__init__()
         self.user_config = None
+        self.chat_counter = 0
 
     async def on_load(self) -> None:
         self.bind("q", "quit", description="Quit")
 
     async def on_mount(self) -> None:
         self.install_screen(StartScreen(), name="start")
-        self.install_screen(ChatScreen(), name="chat")
         self.push_screen("start")
+        
 
 
 if __name__ == "__main__":
