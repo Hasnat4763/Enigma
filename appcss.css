@@ -12,16 +12,47 @@ Horizontal.button-row {
 }
 
 .banner {
-    dock: top;
     align: center middle;
-    color: white;
+    color: rgb(43, 255, 0);
     background: blue;
     height: 3;
+    text-align: center;
 
 }
 .header {
-    color: blue;
-    background: black;
+    color: rgb(0, 255, 0);
+    background: rgb(0, 38, 255);
     height: 2;
+    text-align: center;
 
+}
+
+.chat-layout {
+    height: 1fr;
+}
+
+ScrollView {
+    border: none;
+}
+
+#dialog {
+    align: center middle;
+}
+
+
+.chat-layout > ScrollView:first-child {
+    width: 3fr;          /* 3/4 of total width */
+    min-width: 60%;
+    padding: 1 1;
+    border-right: solid gray;
+}
+
+
+.chat-layout > ScrollView:last-child {
+    width: 1fr;          /* 1/4 of total width */
+    max-width: 25%;
+    min-width: 20;
+    background: #111133;
+    padding: 1 1;
+    border-left: solid #333355;
 }

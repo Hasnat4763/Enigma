@@ -1,0 +1,53 @@
+2025-10-19 21:02:59,533 - INFO - Server Stated on ('::1', 8000, 0, 0), ('127.0.0.1', 8000)
+2025-10-19 21:02:59,533 - INFO - Configuration:
+2025-10-19 21:02:59,533 - INFO - Max Username Length: 20
+2025-10-19 21:02:59,534 - INFO - Max Message Length: 800
+2025-10-19 21:02:59,534 - INFO - Rate Limit: 15 messages per 15 seconds
+2025-10-19 21:07:59,538 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 21:12:59,542 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 21:17:59,536 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 21:22:59,546 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 21:25:22,525 - INFO - Server Stated on ('::1', 8000, 0, 0), ('127.0.0.1', 8000)
+2025-10-19 21:25:22,525 - INFO - Configuration:
+2025-10-19 21:25:22,526 - INFO - Max Username Length: 20
+2025-10-19 21:25:22,526 - INFO - Max Message Length: 800
+2025-10-19 21:25:22,526 - INFO - Rate Limit: 15 messages per 15 seconds
+2025-10-19 21:49:00,671 - INFO - Server Started on ('127.0.0.1', 8000), ('::1', 8000, 0, 0)
+2025-10-19 21:49:00,672 - INFO - Configuration:
+2025-10-19 21:49:00,672 - INFO - Max Username Length: 20
+2025-10-19 21:49:00,672 - INFO - Rate Limit: 15 messages per 15 seconds
+2025-10-19 21:49:10,780 - INFO - New connection from ('127.0.0.1', 26201)
+2025-10-19 21:49:16,565 - INFO - New connection from ('127.0.0.1', 26208)
+2025-10-19 21:49:17,349 - INFO - New connection from ('127.0.0.1', 26210)
+2025-10-19 21:49:20,925 - INFO - New connection from ('127.0.0.1', 26213)
+2025-10-19 21:51:31,238 - INFO - New connection from ('127.0.0.1', 5984)
+2025-10-19 21:54:00,689 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 21:59:00,704 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 21:59:14,660 - INFO - New connection from ('127.0.0.1', 64871)
+2025-10-19 21:59:18,044 - INFO - New connection from ('127.0.0.1', 64872)
+2025-10-19 22:02:43,010 - INFO - New connection from ('127.0.0.1', 28939)
+2025-10-19 22:02:47,704 - INFO - New connection from ('127.0.0.1', 28946)
+2025-10-19 22:02:52,471 - INFO - New connection from ('127.0.0.1', 28947)
+2025-10-19 22:04:00,715 - INFO - Server Stats: Connected Clients: 2, Users: ['I am W', 'Lol']
+2025-10-19 22:08:38,113 - INFO - New connection from ('127.0.0.1', 24548)
+2025-10-19 22:08:42,584 - INFO - New connection from ('127.0.0.1', 24553)
+2025-10-19 22:08:46,094 - INFO - New connection from ('127.0.0.1', 24554)
+2025-10-19 22:09:00,738 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 22:09:39,256 - INFO - New connection from ('127.0.0.1', 40526)
+2025-10-19 22:09:42,259 - INFO - New connection from ('127.0.0.1', 40527)
+2025-10-19 22:11:43,021 - INFO - Server Started on ('127.0.0.1', 8000), ('::1', 8000, 0, 0)
+2025-10-19 22:11:43,021 - INFO - Configuration:
+2025-10-19 22:11:43,021 - INFO - Max Username Length: 20
+2025-10-19 22:11:43,021 - INFO - Rate Limit: 15 messages per 15 seconds
+2025-10-19 22:11:52,726 - INFO - New connection from ('127.0.0.1', 38132)
+2025-10-19 22:11:59,118 - INFO - New connection from ('127.0.0.1', 38136)
+2025-10-19 22:12:03,421 - INFO - New connection from ('127.0.0.1', 38137)
+2025-10-19 22:12:07,456 - INFO - Lamo disconnected
+2025-10-19 22:12:17,454 - INFO - New connection from ('127.0.0.1', 38145)
+2025-10-19 22:12:28,779 - INFO - Sigma Not Nigga disconnected
+2025-10-19 22:12:30,209 - INFO - I am W disconnected
+2025-10-19 22:13:49,352 - INFO - New connection from ('127.0.0.1', 38474)
+2025-10-19 22:16:43,024 - INFO - Server Stats: Connected Clients: 1, Users: ['I am W']
+2025-10-19 22:17:12,869 - INFO - New connection from ('127.0.0.1', 18991)
+2025-10-19 22:17:30,932 - INFO - I am W disconnected
+2025-10-19 22:17:32,241 - INFO - Sigma disconnected
