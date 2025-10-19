@@ -5,13 +5,33 @@ import re
 import logging
 from collections import defaultdict
 from datetime import datetime
+from dotenv import load_dotenv
+
+
+DEFAULTS = {
+    "SERVER_HOST": "",
+    "SERVER_PORT": "8000",
+    "MAX_USERNAME_LENGTH": "20",
+    "RATE_LIMIT": "15"
+}
+
+# Create .env file if it doesnt exist
+
+if not os.path.exists(".env"):
+    with open(".env", "w") as f:
+        for key, val in DEFAULTS.items():
+            f.write(f"{key}={val}\n")
 
 
 
-HOST = input("Enter Server Host: ") or "localhost"
-PORT = int(input("Enter Server Port: ") or 8000)
-MAX_USERNAME_LENGTH = 20
-RATE_LIMIT = 15
+
+load_dotenv()
+
+
+HOST = os.getenv("SERVER_HOST") or "localhost"
+PORT = int(os.getenv("SERVER_PORT") or 8000)
+MAX_USERNAME_LENGTH = int(os.getenv("MAX_USERNAME_LENGTH") or 20)
+RATE_LIMIT = int(os.getenv("RATE_LIMIT") or 15)
 
 logging.basicConfig(
     level=logging.INFO,
