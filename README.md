@@ -21,3 +21,10 @@ Because it uses client side encryption/decryption, you have to give the decrypti
 
 1. Duplicate Username Check
 2. UI that gives Hacker Vibe
+
+# Image 
+
+![alt text](image.png)
+
+
+![alt text](image-1.png)

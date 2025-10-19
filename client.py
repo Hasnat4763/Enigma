@@ -21,6 +21,7 @@ DEFAULTS = {
     "SERVER_PORT": "8000"
 }
 
+# Create .env file if it doesnt exist
 
 if not os.path.exists(".env"):
     with open(".env", "w") as f:
@@ -37,7 +38,7 @@ DEFAULT_DECRYPTION_KEY = os.getenv("DECRYPTION_KEY", "") or ""
 
 
 class StartScreen(Screen):
-    CSS_PATH = "appcss.css"
+    CSS_PATH = "appcss.css" # Adds CSS for Textual
     def compose(self):
         yield Center(
             Vertical(
@@ -84,6 +85,9 @@ class StartScreen(Screen):
             set_key(ENV_PATH, "SERVER_PORT", str(p))
             self.notify("Saved to .env", severity="information", timeout=2.0)
             return
+        
+        # Generate new encryption key
+        
         if event.button.id == "generate_key_button":
             newkey = Fernet.generate_key().decode()
             self.query_one("#key", Input).value = newkey
@@ -97,18 +101,29 @@ class StartScreen(Screen):
                 "host": h,
                 "port": p,
             }
+            
+            # Check if key is valid
+            
             try:
                 Fernet(k.encode())
             except Exception:
                 self.notify("Invalid encryption key! Check format and length.", severity="error", timeout=3.0)
                 return
             
+            # Check if Username is valid
+            
             if not u or not u.strip():
                 self.notify("Invalid Username, it cant be empty!", severity="error", timeout=3.0)
                 return
+            
+            # Check if port is valid
+            
             if not (1 <= p <= 65535):
                 self.notify("Invalid port number! Must be between 1 and 65535.", severity="error", timeout=3.0)
                 return
+            
+            # Check if Server host IP is valid
+            
             if not h or h.isspace() or len(h) > 255:
                 self.notify("Invalid server host! Cannot be empty or too long.", severity="error", timeout=3.0)
                 return
@@ -118,6 +133,8 @@ class StartScreen(Screen):
             setattr(self.app, "chat_counter", current_counter + 1)
             self.app.install_screen(ChatScreen(), name=chat_name)
             self.app.push_screen(chat_name)
+        
+        # This Connects to Unencrypted Chat
         
         if event.button.id == "start_button_unencrypted":
             u, k, h, p = self._collect_values()
@@ -150,7 +167,9 @@ class StartScreen(Screen):
         if event.button.id == "quit_button":
             self.app.exit()
             
-            
+
+# This is the Chat Screen
+
 class ChatScreen(Screen):
     CSS_PATH = "appcss.css"
     messages = reactive(list)
@@ -170,7 +189,7 @@ class ChatScreen(Screen):
     def compose(self):
         mode = "Encrypted" if self.encrypted else "Unencrypted"
         status = "Connected" if not self.writer else "Disconnected"
-        header = Static(f"{status} to Enigma 4000 in {mode} Mode", classes="header")
+        header = Static(f"{status} to Enigma 4000 in {mode} Mode", classes="header") # Top Banner
         self.message_display = Static("")
         self.activeusers = Static("")
         self.scroll = ScrollView(self.message_display, classes="chat-messages")
