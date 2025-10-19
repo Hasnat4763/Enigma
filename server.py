@@ -4,13 +4,12 @@ import os
 import re
 import logging
 from collections import defaultdict
-from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()
 
-HOST = os.getenv("HOST", "localhost")
-PORT = int(os.getenv("PORT", 8000))
+
+HOST = input("Enter Server Host: ") or "localhost"
+PORT = int(input("Enter Server Port: ") or 8000)
 MAX_USERNAME_LENGTH = 20
 RATE_LIMIT = 15
 

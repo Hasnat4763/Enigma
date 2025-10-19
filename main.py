@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import json
 import os
-import logging
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv, set_key
 from textual.app import App
@@ -15,12 +14,24 @@ from datetime import datetime
 from rich.text import Text
 
 
-logging.getLogger("textual").setLevel(logging.CRITICAL)
+DEFAULTS = {
+    "USER_NAME": "",
+    "DECRYPTION_KEY": "",
+    "SERVER_HOST": "",
+    "SERVER_PORT": "8000"
+}
+
+
+if not os.path.exists(".env"):
+    with open(".env", "w") as f:
+        for key, val in DEFAULTS.items():
+            f.write(f"{key} = {val}\n")
+
 
 load_dotenv()
 ENV_PATH = ".env"
 DEFAULT_USERNAME = os.getenv("USER_NAME", "") or ""
-DEFAULT_SERVER_HOST = os.getenv("SERVER_HOST", "") or "127.0.0.1"
+DEFAULT_SERVER_HOST = os.getenv("SERVER_HOST", "") or ""
 DEFAULT_SERVER_PORT = int(os.getenv("SERVER_PORT") or 8000)
 DEFAULT_DECRYPTION_KEY = os.getenv("DECRYPTION_KEY", "") or ""
 
