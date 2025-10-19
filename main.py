@@ -164,6 +164,7 @@ class ChatScreen(Screen):
         self.scroll = ScrollView(self.message_display, classes="chat-messages")
         self.active = ScrollView(self.activeusers, classes="active-users")
         self.input_box = Input(placeholder="Type your message and press Enter...")
+        self.goback = Button("Disconnect / Go Back to Start", id="goback", variant="success")
 
         yield Vertical(
             header,
@@ -172,7 +173,11 @@ class ChatScreen(Screen):
                 self.active,
                 classes="chat-layout"
             ),
+            Horizontal(
             self.input_box,
+            self.goback,
+            classes="input-layout"
+            )
         )
     async def on_mount(self) -> None:
         cfg = getattr(self.app, "user_config", None)
@@ -207,7 +212,9 @@ class ChatScreen(Screen):
     async def tryconnect(self):
         try:
             self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
-            handshake = {"username": self.username}
+            handshake = {"username": self.username,
+                         "encrypted": self.encrypted
+                         }
             self.writer.write((json.dumps(handshake) + "\n").encode())
             await self.writer.drain()
             line = await self.reader.readline()
@@ -312,16 +319,35 @@ class ChatScreen(Screen):
         self.scroll.scroll_end(animate=False)
         
     async def refresh_active_users(self):
-        active_users_text = Text(", ".join(self.active_users), style="#00eeff")
+        usernumber = str(len(self.active_users))
+        userlist = '\n'.join(self.active_users)
+        active_users_text = Text(f"Active Users ({usernumber}): \n{userlist}", style="#00eeff")
         self.activeusers.update(active_users_text)
         self.active.scroll_end(animate=False)
+        
+        
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "goback":
+            self.app.push_screen("start")
+            if self.readingloop:
+                self.readingloop.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self.readingloop
+            if self.writer:
+                try:
+                    self.writer.close()
+                    await self.writer.wait_closed()
+                except Exception:
+                    pass
+
+
 
     async def handle_input(self, message: str):
         if not message.strip():
             return
         
         if not self.writer:
-            self.add_system_message("❌ Not connected to server", "error")  # ← NEW FORMAT
+            self.add_system_message("❌ Not connected to server", "error")
             await self.refresh_messages()
             return
         if self.encrypted:
@@ -333,14 +359,15 @@ class ChatScreen(Screen):
         try:
             self.writer.write((json.dumps(data) + "\n").encode())
             await self.writer.drain()
-            self.add_user_message("You", message, is_self=True)  # ← NEW FORMAT
+            self.add_user_message("You", message, is_self=True)
             await self.refresh_messages()
         except Exception as e:
-            self.add_system_message(f"❌ Failed to send: {e}", "error")  # ← NEW FORMAT
+            self.add_system_message(f"❌ Failed to send: {e}", "error")
             self.writer = None
             self.connected = False
             await self.refresh_messages()
 
+            
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         await self.handle_input(event.value)
         self.input_box.value = ""

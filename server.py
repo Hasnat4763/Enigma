@@ -14,199 +14,151 @@ PORT = int(os.getenv("PORT", 8000))
 MAX_USERNAME_LENGTH = 20
 RATE_LIMIT = 15
 
-
 logging.basicConfig(
-    level = logging.INFO,
-    format = "%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
         logging.FileHandler("server.log"),
         logging.StreamHandler()
     ]
 )
-
 logger = logging.getLogger(__name__)
-
-clients = {}
-
+encrypted_clients = {}
+unencrypted_clients = {}
 user_message_time = defaultdict(list)
 
+
+def get_client_group(is_encrypted: bool) -> dict:
+    return encrypted_clients if is_encrypted else unencrypted_clients
 def validate_username(username: str) -> tuple[bool, str]:
     if not username or not username.strip():
-        return False, "Username Cant Be Empty"
-    
+        return False, "Username cannot be empty"
     username = username.strip()
-    
     if len(username) > MAX_USERNAME_LENGTH:
-        return False, f"Username Too Long Max {MAX_USERNAME_LENGTH} Characters"
-    
+        return False, f"Username too long. Max {MAX_USERNAME_LENGTH} characters"
     if not re.match(r'^[a-zA-Z0-9_\- ]+$', username):
-        return False, "Username Can Only Contain Alphanumeric Characters And Underscores"
-
+        return False, "Username can only contain alphanumeric characters, underscores, hyphens, and spaces"
     return True, ""
-
 def enforce_rate_limit(username: str) -> bool:
     now = datetime.now().timestamp()
     timestamps = user_message_time[username]
-    
     user_message_time[username] = [t for t in timestamps if now - t < RATE_LIMIT]
-    
     if len(user_message_time[username]) >= RATE_LIMIT:
         return True
-    
     user_message_time[username].append(now)
     return False
-
-async def broadcast_current_users_list():
-    user_list = list(clients.values())
-    message = {
-        "system": True,
-        "text": "Current Users",
-        "users": user_list
-    }
-    await broadcast(message)
-
-async def broadcast(message: dict, exclude=None):
+async def broadcast(message: dict, exclude=None, encrypted: bool = True):
+    group = get_client_group(encrypted)
     line = (json.dumps(message) + "\n").encode()
-    for client in list(clients.keys()):
+    for client in list(group.keys()):
         if client != exclude:
             try:
                 client.write(line)
                 await client.drain()
             except Exception:
-                clients.pop(client, None)
-
+                group.pop(client, None)
+async def broadcast_current_users_list(encrypted: bool):
+    group = get_client_group(encrypted)
+    user_list = list(group.values())
+    message = {"system": True, "text": "Current Users", "users": user_list}
+    await broadcast(message, encrypted=encrypted)
 async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     address = writer.get_extra_info("peername")
     username = None
+    is_encrypted = True
     logger.info(f"New connection from {address}")
-
     try:
         while True:
-            if username is None:
-                timeout = 15
-            else:
-                timeout = 300
-            
+            timeout = 15 if username is None else 300
             try:
                 line = await asyncio.wait_for(reader.readline(), timeout)
             except asyncio.TimeoutError:
-                if username is None:
-                    print(f"Handshake timeout from {address}")
-                else:
-                    print(f"Idle timeout for {username}")
+                logger.info(f"Timeout for {username or address}")
                 writer.close()
                 await writer.wait_closed()
                 return
-            
             if not line:
                 return
-
             try:
                 message = json.loads(line.decode())
-            except (json.JSONDecodeError, UnicodeDecodeError) as e:
-                print(f"Error decoding message from {username or address}: {e}")
+            except (json.JSONDecodeError, UnicodeDecodeError):
                 if username is None:
                     writer.close()
                     await writer.wait_closed()
                     return
                 continue
-
             if username is None:
                 if "username" not in message:
-                    print(f"No username in handshake from {address}")
                     writer.close()
                     await writer.wait_closed()
                     return
-                
-                requested = message["username"]
-                is_valid, error_msg = validate_username(requested)
-                if not is_valid:
-                    error = {"system": True, "text": error_msg}
-                    print(f"Invalid username {requested} from {address}: {error_msg}")
-                    writer.write((json.dumps(error) + "\n").encode())
+                username = message["username"].strip()
+                is_encrypted = message.get("encrypted", True)
+                clients_group = get_client_group(is_encrypted)
+                valid, error_msg = validate_username(username)
+                if not valid:
+                    writer.write((json.dumps({"system": True, "text": error_msg}) + "\n").encode())
                     await writer.drain()
                     writer.close()
                     await writer.wait_closed()
                     return
-                    
-                normalized = requested.strip().lower()
-                if any(u.strip().lower() == normalized for u in clients.values()):
-                    error = {"system": True, "text": "already in use"}
-                    print(f"Username {requested} already in use from {address}")
-                    writer.write((json.dumps(error) + "\n").encode())
+                normalized = username.lower()
+                if any(u.lower() == normalized for u in clients_group.values()):
+                    writer.write((json.dumps({"system": True, "text": "Username already in use"}) + "\n").encode())
                     await writer.drain()
                     writer.close()
                     await writer.wait_closed()
                     return
-            
-                username = requested
-                clients[writer] = username
-                welcome = {"system": True, "text": f"Connected as {username}"}
-                writer.write((json.dumps(welcome) + "\n").encode())
+                clients_group[writer] = username
+                writer.write((json.dumps({"system": True, "text": f"Connected as {username}"}) + "\n").encode())
                 await writer.drain()
-                
-                print(f"{username} joined from {address}")
-                await broadcast({"system": True, "text": f"{username} joined"}, exclude=writer)
-                await broadcast_current_users_list()
+                logger.info(f"{username} joined from {address}")
+                await broadcast({"system": True, "text": f"{username} joined"}, exclude=writer, encrypted=is_encrypted)
+                await broadcast_current_users_list(encrypted=is_encrypted)
                 continue
-            
             if enforce_rate_limit(username):
-                error = {"system": True, "text": f"Rate Limit Exceeded: Max {RATE_LIMIT} messages per {RATE_LIMIT} seconds"}
-                writer.write((json.dumps(error) + "\n").encode())
+                writer.write((json.dumps({"system": True, "text": f"Rate limit exceeded: Max {RATE_LIMIT} messages per {RATE_LIMIT} seconds"}) + "\n").encode())
                 await writer.drain()
                 continue
-            await broadcast(message, exclude=writer)
-                
+            clients_group = get_client_group(is_encrypted)
+            await broadcast(message, exclude=writer, encrypted=is_encrypted)
+
     except Exception as e:
         logger.error(f"Error with client {username or address}: {e}")
-                    
-            
 
     finally:
-        if writer in clients:
-            left_user = clients.pop(writer, None) or str(address)
+        clients_group = get_client_group(is_encrypted)
+        if writer in clients_group:
+            left_user = clients_group.pop(writer)
             logger.info(f"{left_user} disconnected")
-            await broadcast({"system": True, "text": f"{left_user} left"}, exclude=writer)
-            await broadcast_current_users_list()
+            await broadcast({"system": True, "text": f"{left_user} left"}, exclude=writer, encrypted=is_encrypted)
+            await broadcast_current_users_list(encrypted=is_encrypted)
         try:
             writer.close()
             await writer.wait_closed()
         except Exception:
             pass
 
+
 async def server_stats_logger():
     while True:
         await asyncio.sleep(300)
-        logger.info(f"Server Stats: Connected Clients: {len(clients)}, Users: {list(clients.values())}")
-
-
+        logger.info(f"Encrypted clients: {len(encrypted_clients)}, Unencrypted clients: {len(unencrypted_clients)}")
 
 
 async def main():
     try:
         server = await asyncio.start_server(handle_client, HOST, PORT)
         address = ", ".join(str(sock.getsockname()) for sock in server.sockets)
-        logger.info(f"Server Started on {address}")
-        logger.info("Configuration:")
-        logger.info(f"Max Username Length: {MAX_USERNAME_LENGTH}")
-        logger.info(f"Rate Limit: {RATE_LIMIT} messages per {RATE_LIMIT} seconds")
-        
+        logger.info(f"Server started on {address}")
         logging_task = asyncio.create_task(server_stats_logger())
-        
-        print(f"Serving on {address}")
         async with server:
             await server.serve_forever()
     except KeyboardInterrupt:
         print("Server shutting down...")
-    except Exception as e:
-        print(f"Server error: {e}")
-        
     finally:
         if 'logging_task' in locals():
-            try:
-                logging_task.cancel()
-            except Exception as e:
-                logger.error(f"Error cancelling logging task: {e}")
+            logging_task.cancel()
 
 
 if __name__ == "__main__":

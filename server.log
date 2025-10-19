@@ -51,3 +51,69 @@
 2025-10-19 22:17:12,869 - INFO - New connection from ('127.0.0.1', 18991)
 2025-10-19 22:17:30,932 - INFO - I am W disconnected
 2025-10-19 22:17:32,241 - INFO - Sigma disconnected
+2025-10-19 22:24:33,170 - INFO - Server Started on ('::1', 8000, 0, 0), ('127.0.0.1', 8000)
+2025-10-19 22:24:33,170 - INFO - Configuration:
+2025-10-19 22:24:33,170 - INFO - Max Username Length: 20
+2025-10-19 22:24:33,170 - INFO - Rate Limit: 15 messages per 15 seconds
+2025-10-19 22:24:37,368 - INFO - New connection from ('127.0.0.1', 39919)
+2025-10-19 22:24:48,691 - INFO - I am W disconnected
+2025-10-19 22:26:43,999 - INFO - New connection from ('127.0.0.1', 1770)
+2025-10-19 22:26:50,800 - INFO - I am W disconnected
+2025-10-19 22:27:58,421 - INFO - New connection from ('127.0.0.1', 34478)
+2025-10-19 22:28:05,176 - INFO - I am W disconnected
+2025-10-19 22:29:33,182 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 22:30:01,443 - INFO - New connection from ('127.0.0.1', 45424)
+2025-10-19 22:30:09,762 - INFO - I am W disconnected
+2025-10-19 22:30:56,447 - INFO - New connection from ('127.0.0.1', 32514)
+2025-10-19 22:31:03,222 - INFO - I am W disconnected
+2025-10-19 22:31:19,933 - INFO - New connection from ('127.0.0.1', 2013)
+2025-10-19 22:31:31,009 - INFO - New connection from ('127.0.0.1', 2029)
+2025-10-19 22:31:36,097 - INFO - New connection from ('127.0.0.1', 2031)
+2025-10-19 22:31:36,710 - INFO - New connection from ('127.0.0.1', 2032)
+2025-10-19 22:31:37,389 - INFO - New connection from ('127.0.0.1', 2033)
+2025-10-19 22:31:41,665 - INFO - New connection from ('127.0.0.1', 2034)
+2025-10-19 22:31:44,112 - INFO - lmao disconnected
+2025-10-19 22:31:44,123 - INFO - I am W disconnected
+2025-10-19 22:31:48,793 - INFO - New connection from ('127.0.0.1', 27212)
+2025-10-19 22:31:59,225 - INFO - New connection from ('127.0.0.1', 27218)
+2025-10-19 22:32:05,212 - INFO - skulk disconnected
+2025-10-19 22:32:07,281 - INFO - I am W disconnected
+2025-10-19 22:34:10,873 - INFO - New connection from ('127.0.0.1', 34089)
+2025-10-19 22:34:12,175 - INFO - I am W disconnected
+2025-10-19 22:34:13,306 - INFO - New connection from ('127.0.0.1', 34090)
+2025-10-19 22:34:33,176 - INFO - Server Stats: Connected Clients: 1, Users: ['I am W']
+2025-10-19 22:39:13,338 - INFO - I am W disconnected
+2025-10-19 22:39:33,195 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 22:44:33,207 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 22:49:33,216 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 22:52:46,244 - INFO - New connection from ('127.0.0.1', 53787)
+2025-10-19 22:52:56,386 - INFO - lmao disconnected
+2025-10-19 22:54:33,239 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 22:54:34,725 - INFO - New connection from ('127.0.0.1', 50113)
+2025-10-19 22:54:46,631 - INFO - I am W disconnected
+2025-10-19 22:59:33,248 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 23:04:33,252 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 23:09:15,533 - INFO - New connection from ('::1', 14845, 0, 0)
+2025-10-19 23:09:15,561 - INFO - New connection from ('::1', 10564, 0, 0)
+2025-10-19 23:09:15,990 - INFO - New connection from ('::1', 42634, 0, 0)
+2025-10-19 23:09:33,264 - INFO - Server Stats: Connected Clients: 0, Users: []
+2025-10-19 23:12:24,984 - INFO - New connection from ('127.0.0.1', 35455)
+2025-10-19 23:12:32,191 - INFO - I am W disconnected
+2025-10-19 23:13:38,958 - INFO - New connection from ('127.0.0.1', 23070)
+2025-10-19 23:13:45,073 - INFO - New connection from ('127.0.0.1', 23076)
+2025-10-19 23:13:50,550 - INFO - yay disconnected
+2025-10-19 23:13:54,453 - INFO - I am W disconnected
+2025-10-19 23:14:33,088 - INFO - New connection from ('127.0.0.1', 2015)
+2025-10-19 23:14:33,284 - INFO - Server Stats: Connected Clients: 1, Users: ['I am W']
+2025-10-19 23:14:36,079 - INFO - I am W disconnected
+2025-10-19 23:14:48,487 - INFO - New connection from ('127.0.0.1', 2051)
+2025-10-19 23:14:50,175 - INFO - I am W disconnected
+2025-10-19 23:15:03,424 - INFO - New connection from ('127.0.0.1', 2105)
+2025-10-19 23:15:05,858 - INFO - I am W disconnected
+2025-10-19 23:15:19,193 - INFO - New connection from ('127.0.0.1', 2135)
+2025-10-19 23:15:22,354 - INFO - I am W disconnected
+2025-10-19 23:15:42,194 - INFO - New connection from ('127.0.0.1', 59448)
+2025-10-19 23:15:45,536 - INFO - New connection from ('127.0.0.1', 59453)
+2025-10-19 23:15:49,364 - INFO - New connection from ('127.0.0.1', 59455)
+2025-10-19 23:15:57,672 - INFO - I am W disconnected
+2025-10-19 23:16:02,244 - INFO - lol disconnected
