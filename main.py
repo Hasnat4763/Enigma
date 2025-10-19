@@ -25,7 +25,7 @@ DEFAULTS = {
 if not os.path.exists(".env"):
     with open(".env", "w") as f:
         for key, val in DEFAULTS.items():
-            f.write(f"{key} = {val}\n")
+            f.write(f"{key}={val}\n")
 
 
 load_dotenv()
@@ -165,6 +165,7 @@ class ChatScreen(Screen):
         self.port = None
         self.readingloop = None
         self.encrypted = True
+        self.active_users = []
 
     def compose(self):
         mode = "Encrypted" if self.encrypted else "Unencrypted"
@@ -350,7 +351,8 @@ class ChatScreen(Screen):
                     await self.writer.wait_closed()
                 except Exception:
                     pass
-
+            self.writer = None
+            self.readingloop = None
 
 
     async def handle_input(self, message: str):
@@ -394,7 +396,8 @@ class ChatScreen(Screen):
                 await self.writer.wait_closed()
             except Exception:
                 pass
-
+        self.writer = None
+        self.readingloop = None
     
     def timestamp(self):
         return datetime.now().strftime("%H:%M:%S")
