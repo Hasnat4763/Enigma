@@ -22,6 +22,27 @@ Because it uses client side encryption/decryption, you have to give the decrypti
 1. Duplicate Username Check
 2. UI that gives Hacker Vibe
 
+# How to use
+
+Download a build that suites your OS
+
+To connect to my Server:
+
+```
+Host: hasnat4763.hackclub.app
+Port: 32768
+```
+
+# How to Host Own Server
+
+Run ```docker pull hasnat4763/enigmaserver:v1```
+
+This Shall download the docker file
+
+Then Run ```docker run -d -p 32768:8000 --name enigma-app --restart unless-stopped hasnat4763/enigmaserver:v1```
+
+This will start your Server
+
 # Image 
 
 ![alt text](image.png)
