@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 
 DEFAULTS = {
-    "SERVER_HOST": "",
+    "SERVER_HOST": "0.0.0.0",
     "SERVER_PORT": "8000",
     "MAX_USERNAME_LENGTH": "20",
     "RATE_LIMIT": "15"
